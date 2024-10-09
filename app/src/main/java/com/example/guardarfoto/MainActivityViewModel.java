@@ -25,11 +25,6 @@ public class MainActivityViewModel extends AndroidViewModel {
         super(application);
     }
 
-    // Obtener MutableLiveData para Uri
-    public LiveData<Uri> getSelectedImageUri() {
-        return selectedImageUri;
-    }
-
     // Obtener MutableLiveData para Bitmap
     public LiveData<Bitmap> getImageBitmap() {
         return imageBitmap;
