@@ -27,93 +27,100 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Inflar la vista usando View Binding
+        // Relacionar vista con view binding
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        // Instanciar ViewModel usando AndroidViewModelFactory
-        viewModel = new ViewModelProvider(this,
-                ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication()))
+        // Instanciar ViewModel
+        viewModel = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication()))
                 .get(MainActivityViewModel.class);
 
-        requestPermissionLauncher =
-                registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
-                    if (isGranted) {
-                        openGallery();
-                    } else {
-                        Toast.makeText(this, "Permiso a galería rechazado", Toast.LENGTH_LONG).show();
-                    }
-                });
+        // Rutina de permisos y callbacks para abrir galería
+        setupGalleryLauncher();
+        // Observadores
+        observeViewModel();
 
-        // Observar cambios en el usuario
-        viewModel.getUsuarioLiveData().observe(this, usuario -> {
-            if (usuario != null) {
-                // Cargar email y password en los campos de texto
-                binding.etEmail.setText(usuario.getEmail());
-                binding.etPassword.setText(usuario.getPassword());
-            } else {
-                Toast.makeText(this, "No se encontraron datos de usuario", Toast.LENGTH_SHORT).show();
-            }
-        });
+        // Listeners para los botones. Se usan lambdas porque las clases internas son un dolor de ojos
+        binding.buttonSelectImage.setOnClickListener(v -> checkGalleryPermissionAndOpenGallery());
+        binding.btRegGuardar.setOnClickListener(v -> saveUsuario());
 
-        // Observar cambios en el LiveData del Bitmap
-        viewModel.getBitmapMutableLiveData().observe(this, bitmap -> {
-            if (bitmap != null) {
-                binding.imageView.setImageBitmap(bitmap);
-            } else {
-                Toast.makeText(this, "No tiene imagen de perfil", Toast.LENGTH_SHORT).show();
-            }
-        });
+        // Cargar datos de usuario si existen
+        viewModel.loadUsuario();  // Al final del onCreate para asegurarse de que se creen los observadores
+    }
 
-        // Configurar lanzador de galería
+    private void setupGalleryLauncher() {
+        // Registrar el callback para abrir la galería
         galleryLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                         Uri imageUri = result.getData().getData();
-                        viewModel.setSelectedImageUri(imageUri);  // Pasar el Uri al ViewModel
+                        viewModel.setSelectedImageUri(imageUri);  // Solo previsualización
                     }
                 });
-
-
-
-        // Seleccionar imagen
-        binding.buttonSelectImage.setOnClickListener(v -> {
-            if (ContextCompat.checkSelfPermission(
-                    this, Manifest.permission.READ_EXTERNAL_STORAGE) ==
-                    PackageManager.PERMISSION_GRANTED) {
+        // Registrar el callback para manejar la respuesta al permiso solicitado
+        requestPermissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+            if (isGranted) {
                 openGallery();
-            } else if (ActivityCompat.shouldShowRequestPermissionRationale(
-                    this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
-                Toast.makeText(this, "Se necesita permiso para acceder a la galería", Toast.LENGTH_LONG).show();
             } else {
-                requestPermissionLauncher.launch(
-                        Manifest.permission.READ_EXTERNAL_STORAGE);
+                Toast.makeText(this, "Permiso a galería denegado", Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void observeViewModel() {
+        // Observer para los datos de usuario
+        viewModel.getUsuarioLiveData().observe(this, usuario -> {
+            if (usuario != null) {
+                binding.etEmail.setText(usuario.getEmail());
+                binding.etPassword.setText(usuario.getPassword());
+                if (usuario.getFotoPerfil() != null) {
+                    viewModel.loadSavedImage(usuario.getFotoPerfil());
+                }
+            } else {
+                Toast.makeText(this, "No hay datos de Usuario", Toast.LENGTH_SHORT).show();
             }
         });
 
-        // Guardar usuario e imagen
-        binding.btRegGuardar.setOnClickListener(v -> {
-            String email = binding.etEmail.getText().toString();
-            String password = binding.etPassword.getText().toString();
-
-            if (email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(this, "Por favor, ingrese email y contraseña", Toast.LENGTH_SHORT).show();
-                return;
+        // Observer para la view image
+        viewModel.getBitmapLiveData().observe(this, bitmap -> {
+            if (bitmap != null) {
+                binding.imageView.setImageBitmap(bitmap);
+            } else {
+                Toast.makeText(this, "No hay imagen de Usuario", Toast.LENGTH_SHORT).show();
             }
-            // Crear o actualizar el objeto Usuario en el ViewModel
-            //viewModel.saveImagenSeteada(); // va a generar el imagePath para saveUsuario en el viewmodel
-            viewModel.saveUsuario(new Usuario(email, password)); // el imagePath lo tiene el viewmodel
-            Toast.makeText(this, "Usuario guardado", Toast.LENGTH_SHORT).show();
         });
+    }
 
-        // Cargar datos del usuario al iniciar la app
-        viewModel.loadUsuario();  // Cargar los datos guardados del usuario
+    private void checkGalleryPermissionAndOpenGallery() {
+        // Verificar si el permiso ya fue otorgado
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            openGallery();
+            // Si el permiso no fue otorgado porque requiere una explicación, darla
+        } else if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            Toast.makeText(this, "Se requiere permiso para acceder a la galería", Toast.LENGTH_LONG).show();
+            // Si el permiso no fue otorgado, solicitarlo
+        } else {
+            requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE);
+        }
     }
 
     private void openGallery() {
         Intent intent = new Intent(Intent.ACTION_PICK);
         intent.setType("image/*");
         galleryLauncher.launch(intent);
+    }
+
+    private void saveUsuario() {
+        String email = binding.etEmail.getText().toString();
+        String password = binding.etPassword.getText().toString();
+
+        if (email.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Complete todos los campos", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        viewModel.saveUsuario(email, password);
+        Toast.makeText(this, "Datos de Usuario guardados", Toast.LENGTH_SHORT).show();
     }
 }

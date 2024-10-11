@@ -12,17 +12,16 @@ import androidx.lifecycle.MutableLiveData;
 public class MainActivityViewModel extends AndroidViewModel {
 
     private final MutableLiveData<Uri> selectedImageUri = new MutableLiveData<>();
-    private final MutableLiveData<Bitmap> bitmapMutableLiveData = new MutableLiveData<>();
+    private final MutableLiveData<Bitmap> bitmapLiveData = new MutableLiveData<>();
     private final MutableLiveData<Usuario> usuarioLiveData = new MutableLiveData<>();
     private String savedImagePath;
 
     public MainActivityViewModel(Application application) {
         super(application);
-        loadUsuario();  // Cargar los datos del usuario al iniciar
     }
 
-    public LiveData<Bitmap> getBitmapMutableLiveData() {
-        return bitmapMutableLiveData;
+    public LiveData<Bitmap> getBitmapLiveData() {
+        return bitmapLiveData;
     }
 
     public LiveData<Usuario> getUsuarioLiveData() {
@@ -30,59 +29,39 @@ public class MainActivityViewModel extends AndroidViewModel {
     }
 
     public void setSelectedImageUri(Uri uri) {
-        try {
-            selectedImageUri.setValue(uri);
-            bitmapMutableLiveData.setValue(ApiClient.loadImageFromUri(getApplication(), uri));
-        } catch (Exception e) {
-            e.printStackTrace();
+        selectedImageUri.setValue(uri);
+        bitmapLiveData.setValue(ApiClient.loadImageFromUri(getApplication(), uri));  // Preview image
+    }
+
+    public void loadSavedImage(String imagePath) {
+        Bitmap bitmap = ApiClient.loadImageFromPath(getApplication(), imagePath);
+        // Provoca que se cargue la imagen seleccionada en la vista
+        bitmapLiveData.setValue(bitmap);
+    }
+
+    public void loadUsuario() {
+        Usuario usuario = ApiClient.getUsuario(getApplication());
+        if (usuario != null) {
+            usuarioLiveData.setValue(usuario);
+            if (usuario.getFotoPerfil() != null) {
+                // Provoca que se cargue la imagen guardada en la vista
+                loadSavedImage(usuario.getFotoPerfil());
+            }
         }
     }
 
-    private void saveImagenSeteada() {
+    public void saveUsuario(String email, String password) {
         if (selectedImageUri.getValue() != null) {
             try {
                 savedImagePath = ApiClient.saveImageToInternalStorage(getApplication(), selectedImageUri.getValue());
-                Bitmap bitmap = ApiClient.loadImageFromPath(getApplication(), savedImagePath);
-                bitmapMutableLiveData.setValue(bitmap);  // Actualizar el LiveData con el nuevo Bitmap
+                bitmapLiveData.setValue(ApiClient.loadImageFromPath(getApplication(), savedImagePath));
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
+
+        Usuario usuario = new Usuario(savedImagePath, email, password);
+        ApiClient.saveUsuario(getApplication(), usuario);
+        usuarioLiveData.setValue(usuario);  // Guardar usuario y actualizar vista
     }
-
-    public void loadUsuario() {
-        try {
-            Usuario usuario = ApiClient.getUsuario(getApplication());
-            if (usuario != null) {
-                if (usuario.getFotoPerfil() != null && !usuario.getFotoPerfil().isEmpty()) {
-                    Bitmap bitmap = ApiClient.loadImageFromPath(getApplication(), usuario.getFotoPerfil());
-                    bitmapMutableLiveData.setValue(bitmap);
-                } else {
-                    bitmapMutableLiveData.setValue(null);  // Sin imagen, poner valor nulo o predeterminado
-                }
-                usuarioLiveData.setValue(usuario);
-            }
-            Log.d("loadUsuario", "Imagen cargada desde: " + usuario.getFotoPerfil());
-            Log.d("loadUsuario", "Usuario cargado: " + usuario);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    public void saveUsuario(Usuario usuario) {
-        try {
-            saveImagenSeteada();  // Guarda la imagen si hay alguna seleccionada
-            if (savedImagePath != null) {
-                usuario.setFotoPerfil(savedImagePath);
-            } else {
-                usuario.setFotoPerfil("");  // Asegura que no sea null
-            }
-            ApiClient.saveUsuario(getApplication(), usuario);
-            usuarioLiveData.setValue(usuario);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
 }
