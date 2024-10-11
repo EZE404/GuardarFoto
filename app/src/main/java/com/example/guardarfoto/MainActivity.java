@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -43,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
         // Listeners para los botones. Se usan lambdas porque las clases internas son un dolor de ojos
         binding.buttonSelectImage.setOnClickListener(v -> checkGalleryPermissionAndOpenGallery());
         binding.btRegGuardar.setOnClickListener(v -> saveUsuario());
-
+        binding.buttonDeleteImage.setOnClickListener(v -> removeImage());
         // Cargar datos de usuario si existen
         viewModel.loadUsuario();  // Al final del onCreate para asegurarse de que se creen los observadores
     }
@@ -86,10 +87,18 @@ public class MainActivity extends AppCompatActivity {
         viewModel.getBitmapLiveData().observe(this, bitmap -> {
             if (bitmap != null) {
                 binding.imageView.setImageBitmap(bitmap);
+                binding.buttonDeleteImage.setVisibility(View.VISIBLE);  // Mostrar botón de eliminar
             } else {
+                binding.imageView.setImageBitmap(null);
+                binding.buttonDeleteImage.setVisibility(View.GONE);  // Ocultar botón de eliminar
                 Toast.makeText(this, "No hay imagen de Usuario", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void removeImage() {
+        viewModel.eliminarImagenPrevisualizacion();  // Solo eliminar previsualización
+        Toast.makeText(this, "Imagen eliminada de la previsualización", Toast.LENGTH_SHORT).show();
     }
 
     private void checkGalleryPermissionAndOpenGallery() {

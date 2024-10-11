@@ -14,6 +14,7 @@ public class MainActivityViewModel extends AndroidViewModel {
     private final MutableLiveData<Bitmap> bitmapLiveData = new MutableLiveData<>();
     private final MutableLiveData<Usuario> usuarioLiveData = new MutableLiveData<>();
     private String savedImagePath;
+    private boolean imageRemoved = false;
 
     public MainActivityViewModel(Application application) {
         super(application);
@@ -27,11 +28,18 @@ public class MainActivityViewModel extends AndroidViewModel {
         return usuarioLiveData;
     }
 
+    // Metodo para establecer la imagen seleccionada en la previsualización
     public void setSelectedImageUri(Uri uri) {
         selectedImageUri.setValue(uri);
         bitmapLiveData.setValue(ApiClient.loadImageFromUri(getApplication(), uri));  // Preview image
     }
 
+    // Metodo para eliminar la imagen solo de la previsualización
+    public void eliminarImagenPrevisualizacion() {
+        bitmapLiveData.setValue(null);  // Eliminar de la previsualización
+        selectedImageUri.setValue(null);  // Limpiar Uri seleccionada
+        imageRemoved = true;  // Marcar como eliminada para su futura eliminación
+    }
     public void loadSavedImage(String imagePath) {
         Bitmap bitmap = ApiClient.loadImageFromPath(getApplication(), imagePath);
         // Provoca que se cargue la imagen seleccionada en la vista
@@ -50,7 +58,12 @@ public class MainActivityViewModel extends AndroidViewModel {
     }
 
     public void saveUsuario(String email, String password) {
-        if (selectedImageUri.getValue() != null) {
+        if (imageRemoved) {
+            if (savedImagePath != null) {
+                ApiClient.deleteImageFromInternalStorage(getApplication(), savedImagePath);  // Eliminar la imagen del almacenamiento
+                savedImagePath = null;  // Limpiar la ruta de la imagen guardada
+            }
+        } else if (selectedImageUri.getValue() != null) {
             try {
                 savedImagePath = ApiClient.saveImageToInternalStorage(getApplication(), selectedImageUri.getValue());
                 bitmapLiveData.setValue(ApiClient.loadImageFromPath(getApplication(), savedImagePath));
@@ -62,5 +75,6 @@ public class MainActivityViewModel extends AndroidViewModel {
         Usuario usuario = new Usuario(email, password, savedImagePath);
         ApiClient.saveUsuario(getApplication(), usuario);
         usuarioLiveData.setValue(usuario);  // Guardar usuario y actualizar vista
+        imageRemoved = false;  // Resetear el estado de eliminación
     }
 }

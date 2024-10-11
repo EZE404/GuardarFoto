@@ -5,7 +5,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -33,7 +32,16 @@ public class ApiClient {
         Log.d("ApiClient", "Imagen guardada en: " + imageFile.getAbsolutePath());
         return imageFile.getAbsolutePath();  // Devolver la ruta del archivo guardado
     }
-
+    // Método para eliminar imagen del almacenamiento
+    public static void deleteImageFromInternalStorage(Context context, String imagePath) {
+        File imageFile = new File(imagePath);
+        if (imageFile.exists()) {
+            boolean deleted = imageFile.delete();
+            if (deleted) {
+                Log.d("ApiClient", "Imagen eliminada del almacenamiento: " + imagePath);
+            }
+        }
+    }
     // Metodo estático para cargar imagen desde el almacenamiento interno
     public static Bitmap loadImageFromPath(Context context, String imagePath) {
         File imageFile = new File(imagePath);
