@@ -1,4 +1,4 @@
-package com.example.guardarfoto;
+package com.example.guardarfoto.modelo;
 
 import androidx.annotation.Nullable;
 

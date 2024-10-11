@@ -1,12 +1,14 @@
-package com.example.guardarfoto;
+package com.example.guardarfoto.ui;
 
 import android.app.Application;
-import android.content.Context;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+
+import com.example.guardarfoto.repositorio.ApiClient;
+import com.example.guardarfoto.modelo.Usuario;
 
 public class LoginActivityViewModel extends AndroidViewModel {
 

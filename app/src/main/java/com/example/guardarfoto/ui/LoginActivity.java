@@ -1,4 +1,4 @@
-package com.example.guardarfoto;
+package com.example.guardarfoto.ui;
 
 import android.content.Intent;
 import android.os.Bundle;

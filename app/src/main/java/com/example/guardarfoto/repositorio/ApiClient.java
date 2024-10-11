@@ -1,10 +1,12 @@
-package com.example.guardarfoto;
+package com.example.guardarfoto.repositorio;
 
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.util.Log;
+
+import com.example.guardarfoto.modelo.Usuario;
 
 import java.io.File;
 import java.io.FileInputStream;
