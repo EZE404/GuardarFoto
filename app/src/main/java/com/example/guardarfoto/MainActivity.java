@@ -31,7 +31,8 @@ public class MainActivity extends AppCompatActivity {
         // Relacionar vista con view binding
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
+        // Ver si se debe precargar o no
+        boolean precargarDatos = getIntent().getBooleanExtra("precargarDatos", false);
         // Instanciar ViewModel
         viewModel = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication()))
                 .get(MainActivityViewModel.class);
@@ -46,7 +47,18 @@ public class MainActivity extends AppCompatActivity {
         binding.btRegGuardar.setOnClickListener(v -> saveUsuario());
         binding.buttonDeleteImage.setOnClickListener(v -> removeImage());
         // Cargar datos de usuario si existen
-        viewModel.loadUsuario();  // Al final del onCreate para asegurarse de que se creen los observadores
+        // Al final del onCreate para asegurarse de que se creen los observadores
+        if (precargarDatos) {
+            viewModel.loadUsuario();  // Precargar datos del usuario
+        } else {
+            binding.etName.setText("");
+            binding.etLastName.setText("");
+            binding.etDni.setText("");
+            binding.etEmail.setText("");
+            binding.etPassword.setText("");
+            binding.imageView.setImageBitmap(null);
+            binding.buttonDeleteImage.setVisibility(View.GONE);
+        }
     }
 
     private void setupGalleryLauncher() {
@@ -75,6 +87,9 @@ public class MainActivity extends AppCompatActivity {
             if (usuario != null) {
                 binding.etEmail.setText(usuario.getEmail());
                 binding.etPassword.setText(usuario.getPassword());
+                binding.etName.setText(usuario.getName());
+                binding.etLastName.setText(usuario.getLastName());
+                binding.etDni.setText(usuario.getDni());
                 if (usuario.getProfileImagePath() != null) {
                     viewModel.loadSavedImage(usuario.getProfileImagePath());
                 }
@@ -123,13 +138,16 @@ public class MainActivity extends AppCompatActivity {
     private void saveUsuario() {
         String email = binding.etEmail.getText().toString();
         String password = binding.etPassword.getText().toString();
+        String name = binding.etName.getText().toString();
+        String lastName = binding.etLastName.getText().toString();
+        String dni = binding.etDni.getText().toString();
 
         if (email.isEmpty() || password.isEmpty()) {
             Toast.makeText(this, "Complete todos los campos", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        viewModel.saveUsuario(email, password);
+        viewModel.saveUsuario(email, password, name, lastName, dni);
         Toast.makeText(this, "Datos de Usuario guardados", Toast.LENGTH_SHORT).show();
     }
 }

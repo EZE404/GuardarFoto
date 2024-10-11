@@ -57,7 +57,7 @@ public class MainActivityViewModel extends AndroidViewModel {
         }
     }
 
-    public void saveUsuario(String email, String password) {
+    public void saveUsuario(String email, String password, String name, String lastName, String dni) {
         if (imageRemoved) {
             if (savedImagePath != null) {
                 ApiClient.deleteImageFromInternalStorage(getApplication(), savedImagePath);  // Eliminar la imagen del almacenamiento
@@ -72,7 +72,7 @@ public class MainActivityViewModel extends AndroidViewModel {
             }
         }
 
-        Usuario usuario = new Usuario(email, password, savedImagePath);
+        Usuario usuario = new Usuario(email, password, savedImagePath, name, lastName, dni);
         ApiClient.saveUsuario(getApplication(), usuario);
         usuarioLiveData.setValue(usuario);  // Guardar usuario y actualizar vista
         imageRemoved = false;  // Resetear el estado de eliminación
