@@ -1,92 +1,88 @@
 package com.example.guardarfoto;
 
 import android.app.Application;
-import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.widget.Toast;
+import android.util.Log;
 
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-
 public class MainActivityViewModel extends AndroidViewModel {
 
     private final MutableLiveData<Uri> selectedImageUri = new MutableLiveData<>();
-    private final MutableLiveData<Bitmap> imageBitmap = new MutableLiveData<>();
+    private final MutableLiveData<Bitmap> bitmapMutableLiveData = new MutableLiveData<>();
+    private final MutableLiveData<Usuario> usuarioLiveData = new MutableLiveData<>();
+    private String savedImagePath;
 
     public MainActivityViewModel(Application application) {
         super(application);
+        loadUsuario();  // Cargar los datos del usuario al iniciar
     }
 
-    // Obtener MutableLiveData para Bitmap
-    public LiveData<Bitmap> getImageBitmap() {
-        return imageBitmap;
+    public LiveData<Bitmap> getBitmapMutableLiveData() {
+        return bitmapMutableLiveData;
     }
 
-    // Asignar Uri de imagen seleccionada
+    public LiveData<Usuario> getUsuarioLiveData() {
+        return usuarioLiveData;
+    }
+
     public void setSelectedImageUri(Uri uri) {
-        selectedImageUri.setValue(uri);
-        loadImageFromUri();
+        try {
+            selectedImageUri.setValue(uri);
+            bitmapMutableLiveData.setValue(ApiClient.loadImageFromUri(getApplication(), uri));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    // Cargar Bitmap a partir del Uri seleccionado
-    private void loadImageFromUri() {
+    private void saveImagenSeteada() {
         if (selectedImageUri.getValue() != null) {
             try {
-                Context context = getApplication();
-                InputStream inputStream = context.getContentResolver().openInputStream(selectedImageUri.getValue());
-                Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-
-                imageBitmap.setValue(bitmap);  // Actualizar el LiveData con el nuevo Bitmap
-                inputStream.close();
+                savedImagePath = ApiClient.saveImageToInternalStorage(getApplication(), selectedImageUri.getValue());
+                Bitmap bitmap = ApiClient.loadImageFromPath(getApplication(), savedImagePath);
+                bitmapMutableLiveData.setValue(bitmap);  // Actualizar el LiveData con el nuevo Bitmap
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
     }
 
-    // Guardar la imagen seleccionada en el almacenamiento interno
-    public void saveImageToInternalStorage() {
-        if (selectedImageUri.getValue() != null) {
-            try {
-                Context context = getApplication();
-                InputStream inputStream = context.getContentResolver().openInputStream(selectedImageUri.getValue());
-                Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-
-                File imageFile = new File(context.getFilesDir(), "perfil.png");
-                try (FileOutputStream fos = new FileOutputStream(imageFile)) {
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
+    public void loadUsuario() {
+        try {
+            Usuario usuario = ApiClient.getUsuario(getApplication());
+            if (usuario != null) {
+                if (usuario.getFotoPerfil() != null && !usuario.getFotoPerfil().isEmpty()) {
+                    Bitmap bitmap = ApiClient.loadImageFromPath(getApplication(), usuario.getFotoPerfil());
+                    bitmapMutableLiveData.setValue(bitmap);
+                } else {
+                    bitmapMutableLiveData.setValue(null);  // Sin imagen, poner valor nulo o predeterminado
                 }
-
-                inputStream.close();
-                imageBitmap.setValue(bitmap);  // Actualizar el LiveData con el nuevo Bitmap
-                Toast.makeText(context, "Imagen guardada", Toast.LENGTH_SHORT).show();
-            } catch (Exception e) {
-                e.printStackTrace();
+                usuarioLiveData.setValue(usuario);
             }
+            Log.d("loadUsuario", "Imagen cargada desde: " + usuario.getFotoPerfil());
+            Log.d("loadUsuario", "Usuario cargado: " + usuario);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
-    // Cargar la imagen guardada desde el almacenamiento interno
-    public void loadSavedImage() {
-        Context context = getApplication();
-        File imageFile = new File(context.getFilesDir(), "perfil.png");
-        if (imageFile.exists()) {
-            try (FileInputStream fis = new FileInputStream(imageFile)) {
-                Bitmap bitmap = BitmapFactory.decodeStream(fis);
-                imageBitmap.setValue(bitmap);  // Actualizar el LiveData con el Bitmap cargado
-            } catch (Exception e) {
-                e.printStackTrace();
+
+    public void saveUsuario(Usuario usuario) {
+        try {
+            saveImagenSeteada();  // Guarda la imagen si hay alguna seleccionada
+            if (savedImagePath != null) {
+                usuario.setFotoPerfil(savedImagePath);
+            } else {
+                usuario.setFotoPerfil("");  // Asegura que no sea null
             }
-        } else {
-            imageBitmap.setValue(null);  // Si no hay imagen, establecer null
+            ApiClient.saveUsuario(getApplication(), usuario);
+            usuarioLiveData.setValue(usuario);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
+
 }

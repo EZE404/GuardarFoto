@@ -1,11 +1,12 @@
 package com.example.guardarfoto;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Toast;
-import android.Manifest;
+
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
@@ -40,13 +41,23 @@ public class MainActivity extends AppCompatActivity {
                     if (isGranted) {
                         openGallery();
                     } else {
-                        Toast.makeText(this, "Permiso rechazado. App finalizada", Toast.LENGTH_LONG).show();
-                        finish();
+                        Toast.makeText(this, "Permiso a galería rechazado", Toast.LENGTH_LONG).show();
                     }
                 });
 
+        // Observar cambios en el usuario
+        viewModel.getUsuarioLiveData().observe(this, usuario -> {
+            if (usuario != null) {
+                // Cargar email y password en los campos de texto
+                binding.etEmail.setText(usuario.getEmail());
+                binding.etPassword.setText(usuario.getPassword());
+            } else {
+                Toast.makeText(this, "No se encontraron datos de usuario", Toast.LENGTH_SHORT).show();
+            }
+        });
+
         // Observar cambios en el LiveData del Bitmap
-        viewModel.getImageBitmap().observe(this, bitmap -> {
+        viewModel.getBitmapMutableLiveData().observe(this, bitmap -> {
             if (bitmap != null) {
                 binding.imageView.setImageBitmap(bitmap);
             } else {
@@ -64,8 +75,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
-        // Cargar imagen al iniciar la app
-        viewModel.loadSavedImage();
+
 
         // Seleccionar imagen
         binding.buttonSelectImage.setOnClickListener(v -> {
@@ -80,13 +90,25 @@ public class MainActivity extends AppCompatActivity {
                 requestPermissionLauncher.launch(
                         Manifest.permission.READ_EXTERNAL_STORAGE);
             }
-
         });
 
-        // Guardar imagen
-        binding.buttonSaveImage.setOnClickListener(v -> {
-            viewModel.saveImageToInternalStorage();  // Guardar la imagen a través del ViewModel
+        // Guardar usuario e imagen
+        binding.btRegGuardar.setOnClickListener(v -> {
+            String email = binding.etEmail.getText().toString();
+            String password = binding.etPassword.getText().toString();
+
+            if (email.isEmpty() || password.isEmpty()) {
+                Toast.makeText(this, "Por favor, ingrese email y contraseña", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            // Crear o actualizar el objeto Usuario en el ViewModel
+            //viewModel.saveImagenSeteada(); // va a generar el imagePath para saveUsuario en el viewmodel
+            viewModel.saveUsuario(new Usuario(email, password)); // el imagePath lo tiene el viewmodel
+            Toast.makeText(this, "Usuario guardado", Toast.LENGTH_SHORT).show();
         });
+
+        // Cargar datos del usuario al iniciar la app
+        viewModel.loadUsuario();  // Cargar los datos guardados del usuario
     }
 
     private void openGallery() {
