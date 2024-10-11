@@ -26,7 +26,6 @@ public class MainActivityViewModel extends AndroidViewModel {
     public LiveData<Bitmap> getBitmapLiveData() {
         return bitmapLiveData;
     }
-
     public LiveData<Usuario> getUsuarioLiveData() {
         return usuarioLiveData;
     }
@@ -35,10 +34,11 @@ public class MainActivityViewModel extends AndroidViewModel {
     public void setSelectedImageUri(Uri uri) {
         selectedImageUri.setValue(uri);
         bitmapLiveData.setValue(ApiClient.loadImageFromUri(getApplication(), uri));  // Preview image
+        imageRemoved = false;
     }
 
     // Metodo para eliminar la imagen solo de la previsualización
-    public void eliminarImagenPrevisualizacion() {
+    public void removeSelectedImage() {
         bitmapLiveData.setValue(null);  // Eliminar de la previsualización
         selectedImageUri.setValue(null);  // Limpiar Uri seleccionada
         imageRemoved = true;  // Marcar como eliminada para su futura eliminación
@@ -47,6 +47,7 @@ public class MainActivityViewModel extends AndroidViewModel {
         Bitmap bitmap = ApiClient.loadImageFromPath(getApplication(), imagePath);
         // Provoca que se cargue la imagen seleccionada en la vista
         bitmapLiveData.setValue(bitmap);
+        savedImagePath = imagePath; // Si el usuario loguea, y guarda sin reseleccionar una imagen, se debe mantener la ruta
     }
 
     public void loadUsuario() {
@@ -77,7 +78,6 @@ public class MainActivityViewModel extends AndroidViewModel {
 
         Usuario usuario = new Usuario(email, password, savedImagePath, name, lastName, dni);
         ApiClient.saveUsuario(getApplication(), usuario);
-        usuarioLiveData.setValue(usuario);  // Guardar usuario y actualizar vista
-        imageRemoved = false;  // Resetear el estado de eliminación
+        loadUsuario();
     }
 }

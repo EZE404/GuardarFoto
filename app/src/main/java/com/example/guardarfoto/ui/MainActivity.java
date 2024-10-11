@@ -85,11 +85,11 @@ public class MainActivity extends AppCompatActivity {
         // Observer para los datos de usuario
         viewModel.getUsuarioLiveData().observe(this, usuario -> {
             if (usuario != null) {
-                binding.etEmail.setText(usuario.getEmail());
-                binding.etPassword.setText(usuario.getPassword());
                 binding.etName.setText(usuario.getName());
                 binding.etLastName.setText(usuario.getLastName());
                 binding.etDni.setText(usuario.getDni());
+                binding.etEmail.setText(usuario.getEmail());
+                binding.etPassword.setText(usuario.getPassword());
                 if (usuario.getProfileImagePath() != null) {
                     viewModel.loadSavedImage(usuario.getProfileImagePath());
                 }
@@ -112,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void removeImage() {
-        viewModel.eliminarImagenPrevisualizacion();  // Solo eliminar previsualización
+        viewModel.removeSelectedImage();  // Solo eliminar previsualización
         Toast.makeText(this, "Imagen eliminada de la previsualización", Toast.LENGTH_SHORT).show();
     }
 
@@ -143,7 +143,7 @@ public class MainActivity extends AppCompatActivity {
         String dni = binding.etDni.getText().toString();
 
         if (email.isEmpty() || password.isEmpty()) {
-            Toast.makeText(this, "Complete todos los campos", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Email y Pass son obligatorios", Toast.LENGTH_SHORT).show();
             return;
         }
 
