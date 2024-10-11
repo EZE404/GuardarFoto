@@ -74,8 +74,8 @@ public class MainActivity extends AppCompatActivity {
             if (usuario != null) {
                 binding.etEmail.setText(usuario.getEmail());
                 binding.etPassword.setText(usuario.getPassword());
-                if (usuario.getFotoPerfil() != null) {
-                    viewModel.loadSavedImage(usuario.getFotoPerfil());
+                if (usuario.getProfileImagePath() != null) {
+                    viewModel.loadSavedImage(usuario.getProfileImagePath());
                 }
             } else {
                 Toast.makeText(this, "No hay datos de Usuario", Toast.LENGTH_SHORT).show();

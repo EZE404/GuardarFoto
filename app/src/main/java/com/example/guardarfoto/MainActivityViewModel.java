@@ -3,7 +3,6 @@ package com.example.guardarfoto;
 import android.app.Application;
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.util.Log;
 
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
@@ -43,9 +42,9 @@ public class MainActivityViewModel extends AndroidViewModel {
         Usuario usuario = ApiClient.getUsuario(getApplication());
         if (usuario != null) {
             usuarioLiveData.setValue(usuario);
-            if (usuario.getFotoPerfil() != null) {
+            if (usuario.getProfileImagePath() != null) {
                 // Provoca que se cargue la imagen guardada en la vista
-                loadSavedImage(usuario.getFotoPerfil());
+                loadSavedImage(usuario.getProfileImagePath());
             }
         }
     }
@@ -60,7 +59,7 @@ public class MainActivityViewModel extends AndroidViewModel {
             }
         }
 
-        Usuario usuario = new Usuario(savedImagePath, email, password);
+        Usuario usuario = new Usuario(email, password, savedImagePath);
         ApiClient.saveUsuario(getApplication(), usuario);
         usuarioLiveData.setValue(usuario);  // Guardar usuario y actualizar vista
     }
